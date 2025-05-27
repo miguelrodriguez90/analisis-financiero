@@ -13,15 +13,16 @@ def autenticar(usuario, clave, usuarios):
         return usuarios[usuario]["rol"]
     return None
 
-# --- Interfaz de login ---
+# --- Login UI ---
 def login():
     st.markdown(
         """
-        <div style="text-align:center">
+        <div style="text-align:center; margin-bottom: 30px">
             <img src="https://raw.githubusercontent.com/miguelrodriguez90/analisis-financiero/main/logo.png" width="180">
             <h2 style="margin-top: 10px;">🔐 Iniciar sesión en Finanlytix</h2>
         </div>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
 
     with st.form("login_form"):
@@ -35,8 +36,8 @@ def login():
         if rol:
             st.session_state["usuario"] = usuario
             st.session_state["rol"] = rol
-            st.success("¡Acceso concedido!")
-            st.experimental_rerun()
+            st.success("¡Acceso concedido! Redireccionando...")
+            st.stop()
         else:
             st.error("Usuario o clave incorrectos")
 
@@ -45,9 +46,23 @@ def login():
         <div style="text-align:center; margin-top: 50px; color: gray; font-size: 14px;">
             Proyecto desarrollado por <b>Miguel Rodríguez</b> – 2025 © Finanlytix. Todos los derechos reservados.
         </div>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
 
+# --- Página principal ---
+def pagina_principal():
+    st.title("📊 Panel de Análisis Financiero")
+    st.write(f"Bienvenido, **{st.session_state['usuario']}**")
+    st.success("Aquí irá tu análisis financiero según el rol del usuario")
+
+# --- Main ---
+def main():
+    st.set_page_config(page_title="Finanlytix - Análisis Financiero", page_icon="📈")
+    if "usuario" not in st.session_state:
+        login()
+    else:
+        pagina_principal()
 # --- Función para calcular EBITDA ---
 def calcular_ebitda(utilidad_neta, intereses, impuestos, depreciacion, amortizacion):
     return utilidad_neta + intereses + impuestos + depreciacion + amortizacion
