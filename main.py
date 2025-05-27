@@ -4,13 +4,49 @@ import json
 # --- Cargar usuarios desde archivo JSON ---
 def cargar_usuarios():
     with open("usuarios.json", "r") as f:
-        return json.load(f)
+        data = json.load(f)
+        return data["usuarios"]
 
 # --- Autenticación simple ---
 def autenticar(usuario, clave, usuarios):
-    if usuario in usuarios and usuarios[usuario]["password"] == clave:
-        return usuarios[usuario]["role"]
+    if usuario in usuarios and usuarios[usuario]["clave"] == clave:
+        return usuarios[usuario]["rol"]
     return None
+
+# --- Interfaz de login ---
+def login():
+    st.markdown(
+        """
+        <div style="text-align:center">
+            <img src="https://raw.githubusercontent.com/miguelrodriguez90/analisis-financiero/main/logo.png" width="180">
+            <h2 style="margin-top: 10px;">🔐 Iniciar sesión en Finanlytix</h2>
+        </div>
+        """, unsafe_allow_html=True
+    )
+
+    with st.form("login_form"):
+        usuario = st.text_input("Usuario")
+        clave = st.text_input("Clave", type="password")
+        submit = st.form_submit_button("Ingresar")
+
+    if submit:
+        usuarios = cargar_usuarios()
+        rol = autenticar(usuario.strip(), clave.strip(), usuarios)
+        if rol:
+            st.session_state["usuario"] = usuario
+            st.session_state["rol"] = rol
+            st.success("¡Acceso concedido!")
+            st.experimental_rerun()
+        else:
+            st.error("Usuario o clave incorrectos")
+
+    st.markdown(
+        """
+        <div style="text-align:center; margin-top: 50px; color: gray; font-size: 14px;">
+            Proyecto desarrollado por <b>Miguel Rodríguez</b> – 2025 © Finanlytix. Todos los derechos reservados.
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 # --- Función para calcular EBITDA ---
 def calcular_ebitda(utilidad_neta, intereses, impuestos, depreciacion, amortizacion):
