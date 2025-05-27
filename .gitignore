@@ -1,12 +1,32 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-.env.*
-*.sqlite3
-*.db
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Entornos virtuales
+.venv/
+env/
+venv/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Archivos del sistema
 .DS_Store
-.history
-*.xls
-*.xlsx
+Thumbs.db
+
+# Archivos de log
+*.log
+
+# Archivos de navegador o temporales
+Cache/
+AppData/
+*.sqlite
+

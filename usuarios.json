@@ -1,0 +1,16 @@
+{
+  "usuarios": {
+    "admin": {
+      "clave": "admin123",
+      "rol": "admin"
+    },
+    "empresa1": {
+      "clave": "empresa123",
+      "rol": "usuario"
+    },
+    "empresa2": {
+      "clave": "empresa456",
+      "rol": "usuario"
+    }
+  }
+}

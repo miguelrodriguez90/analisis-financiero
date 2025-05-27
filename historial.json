@@ -1,0 +1,16 @@
+[
+    {
+        "empresa": "Constructora ABC",
+        "anio": 2024,
+        "usuario": "miguelrodriguez90",
+        "resultados": {
+            "Margen EBITDA": 0.25,
+            "Deuda / EBITDA": 1.6,
+            "ROE": 0.1333,
+            "ROA": 0.0667,
+            "Rotaci\u00f3n del Activo": 0.7,
+            "Margen de Utilidad": 0.1,
+            "Modelo Dupont": 0.1
+        }
+    }
+]

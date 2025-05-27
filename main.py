@@ -1,182 +1,130 @@
+
 import streamlit as st
-import pandas as pd
+from PIL import Image
+import json
 import os
-import io
-import matplotlib.pyplot as plt
 
-# ----------------- Funciones clave ------------------
-
-def evaluar_alerta(nombre, valor):
-    reglas = {
-        "Liquidez corriente": (1.5, 2.5),
-        "Prueba ácida": (1.0, 1.5),
-        "Endeudamiento": (0, 0.5),
-        "ROE": (0.15, 0.25),
-        "ROA": (0.05, 0.15),
-        "Margen neto": (0.10, 0.20),
-        "Margen operativo": (0.12, 0.25),
-        "EBITDA margen": (0.10, 0.20),
-        "Deuda / EBITDA": (0, 3)
-    }
-    if nombre not in reglas:
-        return "🟢 Bueno"
-    bajo, alto = reglas[nombre]
-    if valor < bajo:
-        return "🔴 Riesgoso"
-    elif bajo <= valor <= alto:
-        return "🟡 Aceptable"
-    else:
-        return "🟢 Bueno"
-
-def sugerir_accion(ratio, alerta):
-    if alerta == "🔴 Riesgoso":
-        sugerencias = {
-            "Liquidez corriente": "Revisar ciclo de cobros, reducir pasivos a corto plazo, buscar financiamiento a largo plazo.",
-            "Prueba ácida": "Disminuir inventarios o aumentar caja disponible.",
-            "Endeudamiento": "Refinanciar deuda, aumentar capital propio, reducir activos ineficientes.",
-            "ROE": "Mejorar utilidad neta o eficiencia operativa, reducir costos.",
-            "ROA": "Mejorar utilización de activos, eliminar activos improductivos.",
-            "Margen neto": "Optimizar estructura de costos, renegociar precios con proveedores.",
-            "Margen operativo": "Revisar gastos operativos, automatizar procesos.",
-            "EBITDA margen": "Reducir costos indirectos o mejorar ingresos operativos.",
-            "Deuda / EBITDA": "Aumentar EBITDA o refinanciar deuda para reducir presión financiera."
+def aplicar_estilos():
+    st.markdown(
+        """
+        <style>
+        .main {
+            background-color: #f5f7fa;
         }
-        return sugerencias.get(ratio, "Analizar situación con mayor profundidad.")
-    elif alerta == "🟡 Aceptable":
-        return "Monitorear periódicamente, buscar mejoras graduales."
-    else:
-        return "No requiere acción inmediata."
-
-def svg_alerta(alerta):
-    if "🔴" in alerta:
-        return """<svg height="20" width="20"><circle cx="10" cy="10" r="8" stroke="red" stroke-width="2" fill="red" /></svg>"""
-    elif "🟡" in alerta:
-        return """<svg height="20" width="20"><circle cx="10" cy="10" r="8" stroke="orange" stroke-width="2" fill="orange" /></svg>"""
-    elif "🟢" in alerta:
-        return """<svg height="20" width="20"><circle cx="10" cy="10" r="8" stroke="green" stroke-width="2" fill="green" /></svg>"""
-    return ""
-
-def mostrar_tabla_con_svg(df):
-    html = """
-    <style>
-        table {width:100%; border-collapse: collapse;}
-        th, td {border-bottom: 1px solid #ccc; padding: 8px; text-align:left;}
-        th {background-color: #f2f2f2;}
-    </style>
-    """
-    html += "<table>"
-    html += "<tr><th>Ratio</th><th>Valor</th><th>Indicador</th><th>Alerta</th><th>Acción sugerida</th></tr>"
-    for idx, row in df.iterrows():
-        html += "<tr>"
-        html += f"<td>{idx}</td>"
-        html += f"<td>{row['Valor']:.2f}</td>"
-        html += f"<td>{row['Indicador visual']}</td>"
-        html += f"<td>{row['Alerta']}</td>"
-        html += f"<td>{row['Acción sugerida']}</td>"
-        html += "</tr>"
-    html += "</table>"
-    st.markdown(html, unsafe_allow_html=True)
-
-def exportar_excel(df):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Historial')
-    output.seek(0)
-    return output
-
-# ----------------- Seguridad -----------------
-
-st.sidebar.title("🔐 Seguridad")
-empresa_input = st.sidebar.text_input("Empresa:", value="Mi Empresa S.A.")
-clave_input = st.sidebar.text_input("Clave de acceso:", type="password")
-
-usuarios_autorizados = {
-    "Mi Empresa S.A.": "1234",
-    "Empresa X": "abcd",
-    "Constructora Z": "2025"
-}
-
-if empresa_input not in usuarios_autorizados or clave_input != usuarios_autorizados[empresa_input]:
-    st.warning("🔒 Ingresa una clave válida para acceder al análisis.")
-    st.stop()
-
-empresa = empresa_input
-st.title(f"📊 Análisis financiero - {empresa}")
-
-anio = st.number_input("Año del análisis:", min_value=2000, max_value=2100, step=1, value=2025)
-
-st.header("📥 Ingresar datos financieros")
-
-datos = {
-    "Liquidez corriente": 1.2,
-    "Prueba ácida": 0.9,
-    "Endeudamiento": 0.55,
-    "ROE": 0.12,
-    "ROA": 0.08,
-    "Margen neto": 0.09,
-    "Margen operativo": 0.11,
-    "EBITDA margen": 0.14,
-    "Deuda / EBITDA": 3.2
-}
-
-ratios = datos
-alertas = {nombre: evaluar_alerta(nombre, valor) for nombre, valor in ratios.items()}
-acciones = {nombre: sugerir_accion(nombre, alertas[nombre]) for nombre in ratios.keys()}
-
-df_resultados = pd.DataFrame({
-    "Valor": ratios,
-    "Alerta": alertas,
-    "Acción sugerida": acciones
-})
-df_resultados["Indicador visual"] = df_resultados["Alerta"].apply(svg_alerta)
-
-st.header("🔍 Filtro por alerta")
-opcion_filtro = st.radio(
-    "Seleccionar tipo de alerta:",
-    ("Todos", "🔴 Riesgoso", "🟡 Aceptable", "🟢 Bueno")
-)
-
-if opcion_filtro != "Todos":
-    df_filtrado = df_resultados[df_resultados["Alerta"] == opcion_filtro]
-else:
-    df_filtrado = df_resultados
-
-mostrar_tabla_con_svg(df_filtrado)
-
-import os
-historial_path = "historial_ratios.csv"
-
-df_to_save = df_resultados.copy()
-df_to_save["Empresa"] = empresa
-df_to_save["Año"] = anio
-df_to_save["Ratio"] = df_to_save.index
-cols_order = ["Empresa", "Año", "Ratio", "Valor", "Alerta", "Acción sugerida"]
-df_to_save = df_to_save[cols_order]
-
-if st.button("💾 Guardar resultados en historial"):
-    try:
-        if os.path.exists(historial_path):
-            df_to_save.to_csv(historial_path, mode='a', header=False, index=False)
-        else:
-            df_to_save.to_csv(historial_path, mode='w', header=True, index=False)
-        st.success("✅ Resultados guardados en historial.")
-    except Exception as e:
-        st.error(f"❌ Error guardando historial: {e}")
-
-st.header("📂 Historial guardado")
-if os.path.exists(historial_path):
-    historial_df = pd.read_csv(historial_path)
-    empresas_disponibles = historial_df["Empresa"].unique()
-    empresa_sel = st.selectbox("Seleccionar empresa para historial:", empresas_disponibles, index=list(empresas_disponibles).index(empresa))
-    anios_disponibles = historial_df[historial_df["Empresa"] == empresa_sel]["Año"].unique()
-    anio_sel = st.selectbox("Seleccionar año para historial:", sorted(anios_disponibles, reverse=True))
-    filtro_hist = (historial_df["Empresa"] == empresa_sel) & (historial_df["Año"] == anio_sel)
-    df_hist_filtrado = historial_df[filtro_hist]
-    st.dataframe(df_hist_filtrado)
-    excel_data = exportar_excel(df_hist_filtrado)
-    st.download_button(
-        label="📥 Descargar historial filtrado como Excel",
-        data=excel_data,
-        file_name=f"historial_{empresa_sel}_{anio_sel}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        .stButton>button {
+            background-color: #0f4c81;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 0.5em 1em;
+        }
+        .stButton>button:hover {
+            background-color: #105a99;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
+
+def guardar_historial(datos):
+    archivo = "historial.json"
+    if os.path.exists(archivo):
+        with open(archivo, "r", encoding="utf-8") as f:
+            historial = json.load(f)
+    else:
+        historial = []
+
+    historial.append(datos)
+    with open(archivo, "w", encoding="utf-8") as f:
+        json.dump(historial, f, indent=4)
+
+def mostrar_historial():
+    archivo = "historial.json"
+    if os.path.exists(archivo):
+        with open(archivo, "r", encoding="utf-8") as f:
+            historial = json.load(f)
+
+        st.subheader("📚 Historial de análisis")
+        empresas = sorted(set(item["empresa"] for item in historial))
+        anios = sorted(set(item["anio"] for item in historial))
+
+        filtro_empresa = st.selectbox("Filtrar por empresa", ["Todas"] + empresas)
+        filtro_anio = st.selectbox("Filtrar por año", ["Todos"] + anios)
+
+        for item in historial:
+            if (filtro_empresa == "Todas" or item["empresa"] == filtro_empresa) and                (filtro_anio == "Todos" or item["anio"] == filtro_anio):
+                st.markdown(f"### {item['empresa']} - {item['anio']}")
+                for k, v in item["resultados"].items():
+                    st.write(f"**{k}:** {v:.2%}" if isinstance(v, float) else f"{v}")
+
+def main():
+    aplicar_estilos()
+
+    # Mostrar logo
+    if os.path.exists("logo.png"):
+        logo = Image.open("logo.png")
+        st.image(logo, width=150)
+
+    st.title("📊 Sistema de Análisis Financiero")
+
+    # Entrada de datos
+    st.subheader("📥 Ingreso de datos financieros")
+    empresa = st.text_input("Nombre de la empresa")
+    anio = st.number_input("Año del análisis", step=1, value=2025)
+    EBITDA = st.number_input("EBITDA", step=1000)
+    ventas = st.number_input("Ventas", step=1000)
+    deuda = st.number_input("Deuda total", step=1000)
+    activo_total = st.number_input("Activo total", step=1000)
+    patrimonio = st.number_input("Patrimonio", step=1000)
+    utilidad_neta = st.number_input("Utilidad neta", step=1000)
+    capital = st.number_input("Capital invertido", step=1000)
+
+    if st.button("📈 Calcular Ratios"):
+        if empresa and ventas > 0 and capital > 0 and EBITDA > 0:
+            margen_ebitda = EBITDA / ventas
+            deuda_ebitda = deuda / EBITDA
+            ROE = utilidad_neta / patrimonio if patrimonio else 0
+            ROA = utilidad_neta / activo_total if activo_total else 0
+            rotacion_activo = ventas / activo_total if activo_total else 0
+            margen_utilidad = utilidad_neta / ventas if ventas else 0
+            dupont = ROA * (patrimonio / capital) if capital else 0
+
+            resultados = {
+                "Margen EBITDA": margen_ebitda,
+                "Deuda / EBITDA": deuda_ebitda,
+                "ROE": ROE,
+                "ROA": ROA,
+                "Rotación del Activo": rotacion_activo,
+                "Margen de Utilidad": margen_utilidad,
+                "Modelo Dupont": dupont
+            }
+
+            st.success("✅ Resultados financieros")
+            for k, v in resultados.items():
+                st.write(f"**{k}:** {v:.2%}")
+
+            # Guardar historial
+            guardar_historial({
+                "empresa": empresa,
+                "anio": anio,
+                "usuario": "miguelrodriguez90",
+                "resultados": resultados
+            })
+        else:
+            st.warning("❗Por favor, completa todos los campos con valores válidos.")
+
+    mostrar_historial()
+
+    # Pie de página con copyright
+    st.markdown(
+        """
+        <hr style="margin-top: 50px; margin-bottom: 10px;">
+        <div style="text-align: center; color: gray; font-size: 0.9em;">
+            © 2025 <strong>Finanlytix</strong>. Todos los derechos reservados.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+if __name__ == "__main__":
+    main()
